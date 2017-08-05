@@ -10,38 +10,6 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:scrollbars="vertical" />
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <RadioButton
-            android:id="@+id/pgrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="P.G" />
-        <RadioButton
-            android:id="@+id/pmrd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="P.M" />
-        <EditText
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:ems="3"
-            android:maxLength="3"
-            android:id="@+id/count"
-            android:inputType="number"/>
-        <Button
-            android:id="@+id/select_id"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Get Id" />
-        </LinearLayout>
-
 
 
     <LinearLayout
@@ -54,13 +22,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:editable="false"
+            android:cursorVisible="false"
+            android:inputType="none"/>
 
         <Button
             android:id="@+id/deviceId_send"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" DeviceId " />
+            android:text=" Send Id " />
 
     </LinearLayout>
     <LinearLayout

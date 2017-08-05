@@ -39,7 +39,7 @@ public class LoginActivity extends AppCompatActivity {
         context=getApplicationContext();
         userPreferenceData=new UserPreferenceData(getApplicationContext());
         if (userPreferenceData.isUserLoggedIn()) {
-            Intent intent = new Intent(LoginActivity.this, BluetoothChat.class);
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
             finish();
         }else{
@@ -137,7 +137,7 @@ public class LoginActivity extends AppCompatActivity {
                     userPreferenceData.put("timezone",timezone);
                     userPreferenceData.createUserLoginSession(LoginUserName.getText().toString(), LoginUserPassword.getText().toString());
                     try {
-                        Intent devices = new Intent(LoginActivity.this,BluetoothChat.class);
+                        Intent devices = new Intent(LoginActivity.this,MainActivity.class);
                         devices.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         startActivity(devices);
                         finish();

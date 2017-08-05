@@ -6,6 +6,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,13 +32,17 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import androidRecyclerView.RecyclerItemClickListener;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 import com.Utils.Utility;
 import com.database.CommonUtilities;
+import com.database.DBHelper;
 import com.google.gson.JsonObject;
 import com.javacodegeeks.R;
+import com.login.MainActivity;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -53,6 +60,7 @@ public class BluetoothChat extends ActionBarActivity {
     public static final int MESSAGE_WRITE = 3;
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_CANCEL_CONNECTION=6;
 
     // Key names received from the BluetoothChatService Handler
     public static final String DEVICE_NAME = "device_name";
@@ -61,6 +69,7 @@ public class BluetoothChat extends ActionBarActivity {
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int REQUEST_DISCONNECT = 3;
     private EditText selected_id;
     private Button mSendButton;
 
@@ -85,7 +94,9 @@ public class BluetoothChat extends ActionBarActivity {
     Context context;
     ProgressDialog myDialog;
     Button deviceId_send;
-
+    DBHelper helper;
+    SQLiteDatabase database;
+    SQLiteStatement statement;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -93,6 +104,11 @@ public class BluetoothChat extends ActionBarActivity {
         setContentView(R.layout.main_activity);
         getSupportActionBar().setBackgroundDrawable(getResources().getDrawable(R.drawable.signinupshape));
         context = getApplicationContext();
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setTitle("Connect to Device");
         //user_id = userPreferenceData.get("user_id");
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
         mRecyclerView.setHasFixedSize(true);
@@ -106,91 +122,128 @@ public class BluetoothChat extends ActionBarActivity {
         mRecyclerView.getLayoutManager().scrollToPosition(messageList.size()-1);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         selected_id=(EditText)findViewById(R.id.selected_id);
-        count=(EditText)findViewById(R.id.count);
         // If the adapter is null, then Bluetooth is not supported
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
-       final  RadioButton pg=(RadioButton)findViewById(R.id.pgrd);
-       final RadioButton pm=(RadioButton)findViewById(R.id.pmrd);
-        pg.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if(buttonView.isChecked()){
-                    pg.setChecked(true);
-                    pm.setChecked(false);
-                    Utility.addChecked("PG");
-                }
-            }
-        });
-        pm.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                // TODO Auto-generated method stub
-                if(buttonView.isChecked()){
-                    pm.setChecked(true);
-                    pg.setChecked(false);
-                    Utility.addChecked("PM");
-                }
-            }
-        });
-        Button getDeviceId=(Button)findViewById(R.id.select_id);
-        getDeviceId.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-              String str=  Utility.getSelect_Device().toString().trim();
-                String str_count=count.getText().toString().trim();
-
-                if(str.equals("NOT")){
-                   Toast.makeText(BluetoothChat.this,"Please Select Device Type",Toast.LENGTH_SHORT).show();
-                } else  if(str_count.isEmpty()){
-                    Toast.makeText(BluetoothChat.this,"Please Select Device Range",Toast.LENGTH_SHORT).show();
-                }else{
-                    getDeviceIds();
-                }
-
-            }
-        });
+        Intent intent = getIntent();
+        String id = intent.getStringExtra("hex_id");
+        selected_id.setText(id);
         deviceId_send=(Button)findViewById(R.id.deviceId_send);
         deviceId_send.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                String message=selected_id.getText().toString().trim();
-                for (int i = 0; i < mylist.size(); i++) {
-                    HashMap<String, String> map = mylist.get(i);
-                    final String DevId = map.get("DevId").toString().trim();
-                    final String EncodedSerial = map.get("EncodedSerial").toString().trim();
-                    final String HWVer = map.get("HWVer").toString().trim();
-                    final String ManufacDate = map.get("ManufacDate").toString().trim();
-                    final String BatchNo = map.get("BatchNo").toString().trim();
-                    int b=Integer.parseInt(DevId);
-                    int h=Integer.parseInt(HWVer);
-                    int date=Integer.parseInt(ManufacDate);
-                    int batchno=Integer.parseInt(BatchNo);
-                    long converts=Long.parseLong(EncodedSerial,16);
-                    byte[] send = new byte[] {
-                            (byte) b,
-                            (byte)converts,
-                            (byte)(converts >>> 8),
-                            (byte)(converts >>> 16),
-                            (byte)h,
-                            (byte)0,
-                            (byte)date,
-                            (byte)(date >>> 8),
-                            (byte)(date >>> 16),
-                            (byte)batchno,
-                            (byte)(batchno >>> 8)
-                    };
-                    mChatService.write(send);
+                if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
+                    Toast.makeText(BluetoothChat.this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+                    return;
                 }
-
+                send_Id_to_BT();
             }
         });
+
+    }
+
+
+    private void send_Id_to_BT() {
+        Intent intent = getIntent();
+        String id = intent.getStringExtra("hex_id");
+        try {
+            helper=new DBHelper(BluetoothChat.this);
+            database=helper.getReadableDatabase();
+            String device_type=  Utility.getSelect_Device().toString().trim();
+             mylist.clear();
+            if(device_type.equals("1")){
+                String query = ("select * from pm_deviceIds  where  EncodedSerial ='" + id + "'");
+                Cursor	cursor = database.rawQuery(query, null);
+                if(cursor != null){
+                    if(cursor.moveToLast()){
+                        HashMap<String, String> map = new HashMap<String, String>();
+                        String DevId = cursor.getString(cursor.getColumnIndex("DevId"));
+                        String EncodedSerial = cursor.getString(cursor.getColumnIndex("EncodedSerial"));
+                        String HWVer = cursor.getString(cursor.getColumnIndex("HWVer"));
+                        String ManufacDate = cursor.getString(cursor.getColumnIndex("ManufacDate"));
+                        String BatchNo = cursor.getString(cursor.getColumnIndex("BatchNo"));
+                        String manufacSerialNo=cursor.getString(cursor.getColumnIndex("manufacSerialNo"));
+                        String successId=cursor.getString(cursor.getColumnIndex("successId"));
+                        String failedId=cursor.getString(cursor.getColumnIndex("failedId"));
+                        map.put("manufacSerialNo",manufacSerialNo);
+                        map.put("successId",successId);
+                        map.put("failedId",failedId);
+                        mylist.add(map);
+                        selected_id.setText(EncodedSerial);
+                        int b=Integer.parseInt(DevId);
+                        int h=Integer.parseInt(HWVer);
+                        int date=Integer.parseInt(ManufacDate);
+                        int batchno=Integer.parseInt(BatchNo);
+                        long converts=Long.parseLong(EncodedSerial,16);
+                        byte[] send = new byte[] {
+                                (byte) b,
+                                (byte)converts,
+                                (byte)(converts >>> 8),
+                                (byte)(converts >>> 16),
+                                (byte)h,
+                                (byte)0,
+                                (byte)date,
+                                (byte)(date >>> 8),
+                                (byte)(date >>> 16),
+                                (byte)batchno,
+                                (byte)(batchno >>> 8)
+                        };
+                        mChatService.write(send);
+                    }
+                    cursor.moveToNext();
+
+                }
+            } else if(device_type.equals("2")){
+                String query = ("select * from pg_deviceIds  where  EncodedSerial ='" + id + "'");
+                Cursor	cursor = database.rawQuery(query, null);
+                if(cursor != null){
+                    if(cursor.moveToLast()){
+                        HashMap<String, String> map = new HashMap<String, String>();
+                        String DevId = cursor.getString(cursor.getColumnIndex("DevId"));
+                        String EncodedSerial = cursor.getString(cursor.getColumnIndex("EncodedSerial"));
+                        String HWVer = cursor.getString(cursor.getColumnIndex("HWVer"));
+                        String ManufacDate = cursor.getString(cursor.getColumnIndex("ManufacDate"));
+                        String BatchNo = cursor.getString(cursor.getColumnIndex("BatchNo"));
+                        String manufacSerialNo=cursor.getString(cursor.getColumnIndex("manufacSerialNo"));
+                        String successId=cursor.getString(cursor.getColumnIndex("successId"));
+                        String failedId=cursor.getString(cursor.getColumnIndex("failedId"));
+                        map.put("manufacSerialNo",manufacSerialNo);
+                        map.put("successId",successId);
+                        map.put("failedId",failedId);
+                        mylist.add(map);
+                        selected_id.setText(EncodedSerial);
+                        int b=Integer.parseInt(DevId);
+                        int h=Integer.parseInt(HWVer);
+                        int date=Integer.parseInt(ManufacDate);
+                        int batchno=Integer.parseInt(BatchNo);
+                        long converts=Long.parseLong(EncodedSerial,16);
+                        byte[] send = new byte[] {
+                                (byte) b,
+                                (byte)converts,
+                                (byte)(converts >>> 8),
+                                (byte)(converts >>> 16),
+                                (byte)h,
+                                (byte)0,
+                                (byte)date,
+                                (byte)(date >>> 8),
+                                (byte)(date >>> 16),
+                                (byte)batchno,
+                                (byte)(batchno >>> 8)
+                        };
+                        mChatService.write(send);
+                    }
+                    cursor.moveToNext();
+                }
+            }else{
+                Toast.makeText(getApplicationContext(),"Device Type is Empty Please Try again",Toast.LENGTH_SHORT).show();
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
     }
 
     @Override
@@ -249,8 +302,6 @@ public class BluetoothChat extends ActionBarActivity {
             startActivity(discoverableIntent);
         }
     }
-
-
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
@@ -294,10 +345,36 @@ public class BluetoothChat extends ActionBarActivity {
                     messageList.add(new androidRecyclerView.Message(counter++, writeMessage, "Me"));
                     break;
                 case MESSAGE_READ:
-                    byte[] readBuf = (byte[]) msg.obj;
-                   String readMessage = new String(readBuf, 0, msg.arg1);
-                   System.out.println("read message "+readMessage);
+                    String readMessage = msg.obj.toString().trim();
+                    //   byte[] readBuf = (byte[]) msg.obj;
+                    //  String readMessage = new String(readBuf, 0, msg.arg1);
+                   // final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
+                    if (readMessage.contains("MfgIdState::start")) {
+                        send_Id_to_BT();
+                    }
                     for (int i = 0; i < mylist.size(); i++) {
+                        HashMap<String, String> map = mylist.get(i);
+                        final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
+                        final String successId = map.get("successId").toString().trim();
+                        final String failedId = map.get("failedId").toString().trim();
+                       if (readMessage.contains("MfgIdState::zero")) {
+                            sendDeviceDetails(successId,manufacSerialNo);
+                           //mChatService.stop();
+                       } else if(readMessage.contains("MfgIdState::one")) {
+                            sendDeviceDetails(failedId,manufacSerialNo);
+                           //mChatService.stop();
+                        } else if(readMessage.contains("MfgIdState::one")){
+                            sendDeviceDetails(failedId,manufacSerialNo);
+                           //mChatService.stop();
+                        }else if(readMessage.contains("MfgIdState::stop")){
+                            //on device exit
+                            System.out.println("on device exit");
+                           //mChatService.stop();
+                        }else{
+                            //  mChatService.stop();
+                        }
+                    }
+                    /*for (int i = 0; i < mylist.size(); i++) {
                         HashMap<String, String> map = mylist.get(i);
                         final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
                         if(readMessage.equals("0")){
@@ -315,7 +392,7 @@ public class BluetoothChat extends ActionBarActivity {
                          }else {
                           //on device exit: "MfgIdState::stop"
                         }
-                    }
+                    }*/
                     mAdapter.notifyDataSetChanged();
                     messageList.add(new androidRecyclerView.Message(counter++, readMessage, mConnectedDeviceName));
                     break;
@@ -328,6 +405,11 @@ public class BluetoothChat extends ActionBarActivity {
                 case MESSAGE_TOAST:
                     Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
                     Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_CANCEL_CONNECTION:
+                    System.out.println("message cancel");
+                    Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
                     break;
             }
         }
@@ -356,14 +438,13 @@ public class BluetoothChat extends ActionBarActivity {
                     Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
                     finish();
                 }
+
         }
     }
-
     public void connect(View v) {
         Intent serverIntent = new Intent(this, DeviceListActivity.class);
         startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
     }
-
     public void discoverable(View v) {
         ensureDiscoverable();
     }
@@ -376,30 +457,31 @@ public class BluetoothChat extends ActionBarActivity {
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if(id==R.id.refresh){
-            if (Utility.isNetworkConnected(context)) {
-                getDeviceIds();
-            }
-            return true;
-        }else if(id==R.id.aboutus){
-
-            return true;
+        switch (item.getItemId()) {
+            case R.id.refresh:
+                try {
+                    if (Utility.isNetworkConnected(context)) {
+                        getDeviceIds();
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+                return true;
+            case R.id.logout:
+                try {
+                    logout();
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+                return true;
+            case android.R.id.home:
+                // app icon in action bar clicked; go home
+               onBackPressed();
+                return true;
+            default:
+           return super.onOptionsItemSelected(item);
         }
-        else if(id==R.id.logout){
-            try{
-             logout();
-
-            }catch (Exception e) {
-                // TODO: handle exception
-            }
-            return true;
-        }
-
-
-        return super.onOptionsItemSelected(item);
     }
-
     private void logout() {
         try{
             Utility.showAlertDialog(BluetoothChat.this, "Logout", "Would you like to logout?");
@@ -410,7 +492,6 @@ public class BluetoothChat extends ActionBarActivity {
         }
 
     }
-
     private void getDeviceIds() {
         try {
              String Select_device=Utility.getSelect_Device().toString();
@@ -550,9 +631,13 @@ public class BluetoothChat extends ActionBarActivity {
                 String data = json.getString("data");
                 Toast.makeText(BluetoothChat.this, data, Toast.LENGTH_SHORT).show();
                 selected_id.setText("");
-            }
+                Intent i = new Intent(this, MainActivity.class);
+                startActivity(i);
+                finish();
+             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 }

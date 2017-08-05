@@ -8,6 +8,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,9 +32,9 @@ public class BluetoothChatService {
     // Member fields
     private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
-    private AcceptThread mAcceptThread;
-    private ConnectThread mConnectThread;
-    private ConnectedThread mConnectedThread;
+    private static AcceptThread mAcceptThread;
+    private static ConnectThread mConnectThread;
+    private static ConnectedThread mConnectedThread;
     private int mState;
 
     // Constants that indicate the current connection state
@@ -156,7 +157,7 @@ public class BluetoothChatService {
     /**
      * Stop all threads
      */
-    public synchronized void stop() {
+    public  synchronized void stop() {
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
@@ -169,6 +170,7 @@ public class BluetoothChatService {
             mAcceptThread.cancel();
             mAcceptThread = null;
         }
+        mHandler.obtainMessage(BluetoothChat.MESSAGE_CANCEL_CONNECTION).sendToTarget();
         setState(STATE_NONE);
     }
 
@@ -215,6 +217,9 @@ public class BluetoothChatService {
         msg.setData(bundle);
         mHandler.sendMessage(msg);
     }
+
+
+
 
     /**
      * This thread runs while listening for incoming connections. It behaves
@@ -362,16 +367,24 @@ public class BluetoothChatService {
             byte[] buffer = new byte[1024];
             int bytes;
             // Keep listening to the InputStream while connected
+            int ch;
             while (true) {
                 try {
                     // Read from the InputStream
-                    bytes = mmInStream.read(buffer);
+                   //bytes = mmInStream.read(buffer);
                     // Send the obtained bytes to the UI Activity
-                    mHandler.obtainMessage(BluetoothChat.MESSAGE_READ, bytes, -1, buffer)
+            StringBuffer b = new StringBuffer();
+            while ((ch = mmInStream.read()) != '\n') {
+                b.append((char) ch);
+            }
+           String response = b.toString();
+                    //mHandler.obtainMessage(BluetoothChat.MESSAGE_READ, bytes, -1, buffer)
+                    //       .sendToTarget();
+                    mHandler.obtainMessage(BluetoothChat.MESSAGE_READ, response)
                             .sendToTarget();
-                } catch (IOException e) {
+               } catch (IOException e) {
                     connectionLost();
-                    break;
+                  //  break;
                 }
             }
         }
@@ -394,8 +407,12 @@ public class BluetoothChatService {
         public void cancel() {
             try {
                 mmSocket.close();
+                mmInStream.close();
+                mmOutStream.close();
             } catch (IOException e) {
             }
         }
+
     }
+
 }
