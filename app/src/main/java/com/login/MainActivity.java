@@ -2,14 +2,13 @@ package com.login;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -24,7 +23,6 @@ import com.Utils.Utility;
 import com.database.CommonUtilities;
 import com.database.DBHelper;
 import com.google.gson.JsonObject;
-import com.javacodegeeks.Bluetooth.BluetoothChat;
 import com.javacodegeeks.R;
 
 import org.json.JSONArray;
@@ -40,7 +38,7 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-public class MainActivity extends ActionBarActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 EditText home_count;
 RadioButton home_pgrd,home_pmrd;
     Button home_get_id;
@@ -286,7 +284,7 @@ RadioButton home_pgrd,home_pmrd;
                     }
                     for (int i = 0; i < jsonArray1.length(); i++) {
                         HashMap<String, String> map = new HashMap<String, String>();
-                        JSONObject jObject = jsonArray1.getJSONObject(i);
+                        final JSONObject jObject = jsonArray1.getJSONObject(i);
                         map.put("manufacSerialNo", jObject.getString("manufacSerialNo"));
                         map.put("ManufacId", jObject.getString("ManufacId"));
                         map.put("ManufacDate", jObject.getString("ManufacDate"));
@@ -306,58 +304,68 @@ RadioButton home_pgrd,home_pmrd;
                             pg_list.add(map);
                             Utility.addChecked("2");
                             System.out.println("2"+jObject.getString("DevId"));
-                            try{
-                                helper = new DBHelper(MainActivity.this);
-                                database = helper.getReadableDatabase();
-                                statement = database.compileStatement("insert into pg_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                                statement.bindString(2, jObject.getString("manufacSerialNo"));
-                                statement.bindString(3, jObject.getString("ManufacId"));
-                                statement.bindString(4, jObject.getString("ManufacDate"));
-                                statement.bindString(5, jObject.getString("DevType"));
-                                statement.bindString(6, jObject.getString("DevId"));
-                                statement.bindString(7, jObject.getString("HWVer"));
-                                statement.bindString(8, jObject.getString("BatchNo"));
-                                statement.bindString(9, jObject.getString("EncodedSerial"));
-                                statement.bindString(10, jObject.getString("status"));
-                                statement.bindString(11, jObject.getString("deliveryid"));
-                                statement.bindString(12, jObject.getString("deliverystatus"));
-                                statement.bindString(13, jObject.getString("successId"));
-                                statement.bindString(14, jObject.getString("successStatusMsg"));
-                                statement.bindString(15, jObject.getString("failedId"));
-                                statement.bindString(16, jObject.getString("failedStatusMsg"));
-                                statement.executeInsert();
-                                database.close();
-                            }catch (Exception e){
-                                e.printStackTrace();
-                            }
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try{
+                                        helper = new DBHelper(MainActivity.this);
+                                        database = helper.getReadableDatabase();
+                                        statement = database.compileStatement("insert into pg_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                        statement.bindString(2, jObject.getString("manufacSerialNo"));
+                                        statement.bindString(3, jObject.getString("ManufacId"));
+                                        statement.bindString(4, jObject.getString("ManufacDate"));
+                                        statement.bindString(5, jObject.getString("DevType"));
+                                        statement.bindString(6, jObject.getString("DevId"));
+                                        statement.bindString(7, jObject.getString("HWVer"));
+                                        statement.bindString(8, jObject.getString("BatchNo"));
+                                        statement.bindString(9, jObject.getString("EncodedSerial"));
+                                        statement.bindString(10, jObject.getString("status"));
+                                        statement.bindString(11, jObject.getString("deliveryid"));
+                                        statement.bindString(12, jObject.getString("deliverystatus"));
+                                        statement.bindString(13, jObject.getString("successId"));
+                                        statement.bindString(14, jObject.getString("successStatusMsg"));
+                                        statement.bindString(15, jObject.getString("failedId"));
+                                        statement.bindString(16, jObject.getString("failedStatusMsg"));
+                                        statement.executeInsert();
+                                        database.close();
+                                    }catch (Exception e){
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
                         }else if(jObject.getString("DevId").equals("1")){
                             pm_list.add(map);
                             Utility.addChecked("1");
                             System.out.println("1"+jObject.getString("DevId"));
-                            try{
-                                helper = new DBHelper(MainActivity.this);
-                                database = helper.getReadableDatabase();
-                                statement = database.compileStatement("insert into pm_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                                statement.bindString(2, jObject.getString("manufacSerialNo"));
-                                statement.bindString(3, jObject.getString("ManufacId"));
-                                statement.bindString(4, jObject.getString("ManufacDate"));
-                                statement.bindString(5, jObject.getString("DevType"));
-                                statement.bindString(6, jObject.getString("DevId"));
-                                statement.bindString(7, jObject.getString("HWVer"));
-                                statement.bindString(8, jObject.getString("BatchNo"));
-                                statement.bindString(9, jObject.getString("EncodedSerial"));
-                                statement.bindString(10, jObject.getString("status"));
-                                statement.bindString(11, jObject.getString("deliveryid"));
-                                statement.bindString(12, jObject.getString("deliverystatus"));
-                                statement.bindString(13, jObject.getString("successId"));
-                                statement.bindString(14, jObject.getString("successStatusMsg"));
-                                statement.bindString(15, jObject.getString("failedId"));
-                                statement.bindString(16, jObject.getString("failedStatusMsg"));
-                                statement.executeInsert();
-                                database.close();
-                            }catch (Exception e){
-                                e.printStackTrace();
-                            }
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try{
+                                        helper = new DBHelper(MainActivity.this);
+                                        database = helper.getReadableDatabase();
+                                        statement = database.compileStatement("insert into pm_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                        statement.bindString(2, jObject.getString("manufacSerialNo"));
+                                        statement.bindString(3, jObject.getString("ManufacId"));
+                                        statement.bindString(4, jObject.getString("ManufacDate"));
+                                        statement.bindString(5, jObject.getString("DevType"));
+                                        statement.bindString(6, jObject.getString("DevId"));
+                                        statement.bindString(7, jObject.getString("HWVer"));
+                                        statement.bindString(8, jObject.getString("BatchNo"));
+                                        statement.bindString(9, jObject.getString("EncodedSerial"));
+                                        statement.bindString(10, jObject.getString("status"));
+                                        statement.bindString(11, jObject.getString("deliveryid"));
+                                        statement.bindString(12, jObject.getString("deliverystatus"));
+                                        statement.bindString(13, jObject.getString("successId"));
+                                        statement.bindString(14, jObject.getString("successStatusMsg"));
+                                        statement.bindString(15, jObject.getString("failedId"));
+                                        statement.bindString(16, jObject.getString("failedStatusMsg"));
+                                        statement.executeInsert();
+                                        database.close();
+                                    }catch (Exception e){
+                                        e.printStackTrace();
+                                    }
+                                }
+                            });
                         }
                     }
                     if(Select_device.equals("2")){

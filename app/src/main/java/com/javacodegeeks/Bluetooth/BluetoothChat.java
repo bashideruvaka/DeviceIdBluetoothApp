@@ -12,7 +12,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -23,20 +23,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import androidRecyclerView.RecyclerItemClickListener;
-import retrofit.Callback;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
 import com.Utils.Utility;
 import com.database.CommonUtilities;
 import com.database.DBHelper;
@@ -47,12 +37,19 @@ import com.login.MainActivity;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import androidRecyclerView.MessageAdapter;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
 import static com.Utils.Utility.userPreferenceData;
 
 
-public class BluetoothChat extends ActionBarActivity {
+public class BluetoothChat extends AppCompatActivity {
 
     // Message types sent from the BluetoothChatService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -104,11 +101,10 @@ public class BluetoothChat extends ActionBarActivity {
         setContentView(R.layout.main_activity);
         getSupportActionBar().setBackgroundDrawable(getResources().getDrawable(R.drawable.signinupshape));
         context = getApplicationContext();
-        getSupportActionBar().setHomeButtonEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setTitle("Connect to Device");
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Connect to Device");
+        }
         //user_id = userPreferenceData.get("user_id");
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
         mRecyclerView.setHasFixedSize(true);
@@ -139,7 +135,13 @@ public class BluetoothChat extends ActionBarActivity {
                     Toast.makeText(BluetoothChat.this, R.string.not_connected, Toast.LENGTH_SHORT).show();
                     return;
                 }
-                send_Id_to_BT();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        send_Id_to_BT();
+                    }
+                });
+
             }
         });
 
@@ -350,7 +352,12 @@ public class BluetoothChat extends ActionBarActivity {
                     //  String readMessage = new String(readBuf, 0, msg.arg1);
                    // final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
                     if (readMessage.contains("MfgIdState::start")) {
-                        send_Id_to_BT();
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                send_Id_to_BT();
+                            }
+                        });
                     }
                     for (int i = 0; i < mylist.size(); i++) {
                         HashMap<String, String> map = mylist.get(i);
