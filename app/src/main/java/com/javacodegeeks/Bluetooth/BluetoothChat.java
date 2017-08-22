@@ -101,19 +101,20 @@ public class BluetoothChat extends AppCompatActivity {
         setContentView(R.layout.main_activity);
         getSupportActionBar().setBackgroundDrawable(getResources().getDrawable(R.drawable.signinupshape));
         context = getApplicationContext();
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Connect to Device");
-        }
+        getSupportActionBar().setHomeButtonEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setTitle("Connect to Device");
         //user_id = userPreferenceData.get("user_id");
         mRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
-       // mLayoutManager.setReverseLayout(true);
+        // mLayoutManager.setReverseLayout(true);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mAdapter = new MessageAdapter(getBaseContext(), messageList);
         mRecyclerView.setAdapter(mAdapter);
-       // mRecyclerView.smoothScrollToPosition(0);
+        // mRecyclerView.smoothScrollToPosition(0);
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mRecyclerView.getLayoutManager().scrollToPosition(messageList.size()-1);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -135,13 +136,7 @@ public class BluetoothChat extends AppCompatActivity {
                     Toast.makeText(BluetoothChat.this, R.string.not_connected, Toast.LENGTH_SHORT).show();
                     return;
                 }
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        send_Id_to_BT();
-                    }
-                });
-
+                send_Id_to_BT();
             }
         });
 
@@ -155,7 +150,7 @@ public class BluetoothChat extends AppCompatActivity {
             helper=new DBHelper(BluetoothChat.this);
             database=helper.getReadableDatabase();
             String device_type=  Utility.getSelect_Device().toString().trim();
-             mylist.clear();
+            mylist.clear();
             if(device_type.equals("1")){
                 String query = ("select * from pm_deviceIds  where  EncodedSerial ='" + id + "'");
                 Cursor	cursor = database.rawQuery(query, null);
@@ -247,7 +242,6 @@ public class BluetoothChat extends AppCompatActivity {
         }
 
     }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -259,7 +253,6 @@ public class BluetoothChat extends AppCompatActivity {
 
         }
     }
-
     @Override
     public synchronized void onResume() {
         super.onResume();
@@ -314,10 +307,10 @@ public class BluetoothChat extends AppCompatActivity {
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
-           mChatService.write(send);
+            mChatService.write(send);
             // Reset out string buffer to zero and clear the edit text field
             mOutStringBuffer.setLength(0);
-           // mOutEditText.setText(mOutStringBuffer);
+            // mOutEditText.setText(mOutStringBuffer);
         }
     }
 
@@ -350,33 +343,28 @@ public class BluetoothChat extends AppCompatActivity {
                     String readMessage = msg.obj.toString().trim();
                     //   byte[] readBuf = (byte[]) msg.obj;
                     //  String readMessage = new String(readBuf, 0, msg.arg1);
-                   // final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
+                    // final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
                     if (readMessage.contains("MfgIdState::start")) {
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                send_Id_to_BT();
-                            }
-                        });
+                        send_Id_to_BT();
                     }
                     for (int i = 0; i < mylist.size(); i++) {
                         HashMap<String, String> map = mylist.get(i);
                         final String manufacSerialNo = map.get("manufacSerialNo").toString().trim();
                         final String successId = map.get("successId").toString().trim();
                         final String failedId = map.get("failedId").toString().trim();
-                       if (readMessage.contains("MfgIdState::zero")) {
+                        if (readMessage.contains("MfgIdState::zero")) {
                             sendDeviceDetails(successId,manufacSerialNo);
-                           //mChatService.stop();
-                       } else if(readMessage.contains("MfgIdState::one")) {
+                            //mChatService.stop();
+                        } else if(readMessage.contains("MfgIdState::one")) {
                             sendDeviceDetails(failedId,manufacSerialNo);
-                           //mChatService.stop();
+                            //mChatService.stop();
                         } else if(readMessage.contains("MfgIdState::one")){
                             sendDeviceDetails(failedId,manufacSerialNo);
-                           //mChatService.stop();
+                            //mChatService.stop();
                         }else if(readMessage.contains("MfgIdState::stop")){
                             //on device exit
                             System.out.println("on device exit");
-                           //mChatService.stop();
+                            //mChatService.stop();
                         }else{
                             //  mChatService.stop();
                         }
@@ -411,7 +399,7 @@ public class BluetoothChat extends AppCompatActivity {
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
-                    Toast.LENGTH_SHORT).show();
+                            Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_CANCEL_CONNECTION:
                     System.out.println("message cancel");
@@ -483,10 +471,10 @@ public class BluetoothChat extends AppCompatActivity {
                 return true;
             case android.R.id.home:
                 // app icon in action bar clicked; go home
-               onBackPressed();
+                onBackPressed();
                 return true;
             default:
-           return super.onOptionsItemSelected(item);
+                return super.onOptionsItemSelected(item);
         }
     }
     private void logout() {
@@ -501,9 +489,9 @@ public class BluetoothChat extends AppCompatActivity {
     }
     private void getDeviceIds() {
         try {
-             String Select_device=Utility.getSelect_Device().toString();
-             JsonObject loginUserJsonObject = new JsonObject();
-             loginUserJsonObject.addProperty("userid", "17");
+            String Select_device=Utility.getSelect_Device().toString();
+            JsonObject loginUserJsonObject = new JsonObject();
+            loginUserJsonObject.addProperty("userid", "17");
             loginUserJsonObject.addProperty("authid", "37");
             loginUserJsonObject.addProperty("search", Select_device);
             loginUserJsonObject.addProperty("fetch", 1);
@@ -526,7 +514,7 @@ public class BluetoothChat extends AppCompatActivity {
                         if (retrofitError != null) {
                             myDialog.dismiss();
                             Utility.hideLoader();
-                           // Utility.showAlertDialog(BluetoothChat.this, "Devices", retrofitError.toString());
+                            // Utility.showAlertDialog(BluetoothChat.this, "Devices", retrofitError.toString());
                         }
 
                     }
@@ -591,7 +579,7 @@ public class BluetoothChat extends AppCompatActivity {
             loginUserJsonObject.addProperty("authid", "37");
             loginUserJsonObject.addProperty("manufactureSNO",manufacSerialNo);
             loginUserJsonObject.addProperty("successId", successId);
-           // loginUserJsonObject.addProperty("limit", 1);
+            // loginUserJsonObject.addProperty("limit", 1);
             if (Utility.isNetworkConnected(context)) {
                 myDialog = Utility.showProgressDialog(BluetoothChat.this, "some message");
                 CommonUtilities.getBaseClassService(context, "mobile/manufacture/saveDeviceNotedInfo", "").getfeeders(loginUserJsonObject, new Callback<JsonObject>() {
@@ -638,10 +626,8 @@ public class BluetoothChat extends AppCompatActivity {
                 String data = json.getString("data");
                 Toast.makeText(BluetoothChat.this, data, Toast.LENGTH_SHORT).show();
                 selected_id.setText("");
-                Intent i = new Intent(this, MainActivity.class);
-                startActivity(i);
                 finish();
-             }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

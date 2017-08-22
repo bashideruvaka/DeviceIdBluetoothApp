@@ -18,20 +18,16 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
-
 import com.Utils.Utility;
 import com.database.CommonUtilities;
 import com.database.DBHelper;
 import com.google.gson.JsonObject;
 import com.javacodegeeks.R;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 import androidRecyclerView.DeviceIds;
 import androidRecyclerView.DevicesIDAdapter;
 import retrofit.Callback;
@@ -39,8 +35,8 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-EditText home_count;
-RadioButton home_pgrd,home_pmrd;
+    EditText home_count;
+    RadioButton home_pgrd,home_pmrd;
     Button home_get_id;
     Context context;
     ProgressDialog myDialog;
@@ -69,7 +65,6 @@ RadioButton home_pgrd,home_pmrd;
         // mRecyclerView.setHasFixedSize(true);
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
-
         home_pgrd.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 
             @Override
@@ -116,7 +111,7 @@ RadioButton home_pgrd,home_pmrd;
                             if (cursor.getCount() > 0) {
                                 home_count.setText(Integer.toString(j));
                                 show_PmData();
-                             } else {
+                            } else {
                                 getDeviceIds();
                             }
                         }catch (Exception e){
@@ -141,14 +136,10 @@ RadioButton home_pgrd,home_pmrd;
                             e.printStackTrace();
                         }
                     }
-
-
                 }
 
             }
         });
-
-
     }
     private void show_PgData() {
         try{
@@ -169,11 +160,11 @@ RadioButton home_pgrd,home_pmrd;
                     } while (cursor.moveToNext());
                 }
             }
-             // add data to recyclerview
-        mAdapter = new DevicesIDAdapter(getBaseContext(), deviceidsList);
-        mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(getApplicationContext()));
+            // add data to recyclerview
+            mAdapter = new DevicesIDAdapter(this, deviceidsList);
+            mRecyclerView.setAdapter(mAdapter);
+            mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+            mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(getApplicationContext()));
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -198,7 +189,7 @@ RadioButton home_pgrd,home_pmrd;
                 }
             }
             // add data to recyclerview
-            mAdapter = new DevicesIDAdapter(getBaseContext(), deviceidsList);
+            mAdapter = new DevicesIDAdapter(this, deviceidsList);
             mRecyclerView.setAdapter(mAdapter);
             mRecyclerView.setItemAnimator(new DefaultItemAnimator());
             mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(getApplicationContext()));
@@ -210,9 +201,9 @@ RadioButton home_pgrd,home_pmrd;
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-          case R.id.home_get_id:
+            case R.id.home_get_id:
                 break;
-       }
+        }
     }
     private void getDeviceIds() {
         try {
@@ -280,11 +271,11 @@ RadioButton home_pgrd,home_pmrd;
                         PG_DeleteDataBase();
                     }else if(Select_device.equals("1")){
                         pm_list.clear();
-                       PM_DeleteDataBase();
+                        PM_DeleteDataBase();
                     }
                     for (int i = 0; i < jsonArray1.length(); i++) {
                         HashMap<String, String> map = new HashMap<String, String>();
-                        final JSONObject jObject = jsonArray1.getJSONObject(i);
+                        JSONObject jObject = jsonArray1.getJSONObject(i);
                         map.put("manufacSerialNo", jObject.getString("manufacSerialNo"));
                         map.put("ManufacId", jObject.getString("ManufacId"));
                         map.put("ManufacDate", jObject.getString("ManufacDate"));
@@ -304,68 +295,58 @@ RadioButton home_pgrd,home_pmrd;
                             pg_list.add(map);
                             Utility.addChecked("2");
                             System.out.println("2"+jObject.getString("DevId"));
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try{
-                                        helper = new DBHelper(MainActivity.this);
-                                        database = helper.getReadableDatabase();
-                                        statement = database.compileStatement("insert into pg_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                                        statement.bindString(2, jObject.getString("manufacSerialNo"));
-                                        statement.bindString(3, jObject.getString("ManufacId"));
-                                        statement.bindString(4, jObject.getString("ManufacDate"));
-                                        statement.bindString(5, jObject.getString("DevType"));
-                                        statement.bindString(6, jObject.getString("DevId"));
-                                        statement.bindString(7, jObject.getString("HWVer"));
-                                        statement.bindString(8, jObject.getString("BatchNo"));
-                                        statement.bindString(9, jObject.getString("EncodedSerial"));
-                                        statement.bindString(10, jObject.getString("status"));
-                                        statement.bindString(11, jObject.getString("deliveryid"));
-                                        statement.bindString(12, jObject.getString("deliverystatus"));
-                                        statement.bindString(13, jObject.getString("successId"));
-                                        statement.bindString(14, jObject.getString("successStatusMsg"));
-                                        statement.bindString(15, jObject.getString("failedId"));
-                                        statement.bindString(16, jObject.getString("failedStatusMsg"));
-                                        statement.executeInsert();
-                                        database.close();
-                                    }catch (Exception e){
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
+                            try{
+                                helper = new DBHelper(MainActivity.this);
+                                database = helper.getReadableDatabase();
+                                statement = database.compileStatement("insert into pg_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                statement.bindString(2, jObject.getString("manufacSerialNo"));
+                                statement.bindString(3, jObject.getString("ManufacId"));
+                                statement.bindString(4, jObject.getString("ManufacDate"));
+                                statement.bindString(5, jObject.getString("DevType"));
+                                statement.bindString(6, jObject.getString("DevId"));
+                                statement.bindString(7, jObject.getString("HWVer"));
+                                statement.bindString(8, jObject.getString("BatchNo"));
+                                statement.bindString(9, jObject.getString("EncodedSerial"));
+                                statement.bindString(10, jObject.getString("status"));
+                                statement.bindString(11, jObject.getString("deliveryid"));
+                                statement.bindString(12, jObject.getString("deliverystatus"));
+                                statement.bindString(13, jObject.getString("successId"));
+                                statement.bindString(14, jObject.getString("successStatusMsg"));
+                                statement.bindString(15, jObject.getString("failedId"));
+                                statement.bindString(16, jObject.getString("failedStatusMsg"));
+                                statement.executeInsert();
+                                database.close();
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
                         }else if(jObject.getString("DevId").equals("1")){
                             pm_list.add(map);
                             Utility.addChecked("1");
                             System.out.println("1"+jObject.getString("DevId"));
-                            new Thread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try{
-                                        helper = new DBHelper(MainActivity.this);
-                                        database = helper.getReadableDatabase();
-                                        statement = database.compileStatement("insert into pm_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-                                        statement.bindString(2, jObject.getString("manufacSerialNo"));
-                                        statement.bindString(3, jObject.getString("ManufacId"));
-                                        statement.bindString(4, jObject.getString("ManufacDate"));
-                                        statement.bindString(5, jObject.getString("DevType"));
-                                        statement.bindString(6, jObject.getString("DevId"));
-                                        statement.bindString(7, jObject.getString("HWVer"));
-                                        statement.bindString(8, jObject.getString("BatchNo"));
-                                        statement.bindString(9, jObject.getString("EncodedSerial"));
-                                        statement.bindString(10, jObject.getString("status"));
-                                        statement.bindString(11, jObject.getString("deliveryid"));
-                                        statement.bindString(12, jObject.getString("deliverystatus"));
-                                        statement.bindString(13, jObject.getString("successId"));
-                                        statement.bindString(14, jObject.getString("successStatusMsg"));
-                                        statement.bindString(15, jObject.getString("failedId"));
-                                        statement.bindString(16, jObject.getString("failedStatusMsg"));
-                                        statement.executeInsert();
-                                        database.close();
-                                    }catch (Exception e){
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
+                            try{
+                                helper = new DBHelper(MainActivity.this);
+                                database = helper.getReadableDatabase();
+                                statement = database.compileStatement("insert into pm_deviceIds values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                statement.bindString(2, jObject.getString("manufacSerialNo"));
+                                statement.bindString(3, jObject.getString("ManufacId"));
+                                statement.bindString(4, jObject.getString("ManufacDate"));
+                                statement.bindString(5, jObject.getString("DevType"));
+                                statement.bindString(6, jObject.getString("DevId"));
+                                statement.bindString(7, jObject.getString("HWVer"));
+                                statement.bindString(8, jObject.getString("BatchNo"));
+                                statement.bindString(9, jObject.getString("EncodedSerial"));
+                                statement.bindString(10, jObject.getString("status"));
+                                statement.bindString(11, jObject.getString("deliveryid"));
+                                statement.bindString(12, jObject.getString("deliverystatus"));
+                                statement.bindString(13, jObject.getString("successId"));
+                                statement.bindString(14, jObject.getString("successStatusMsg"));
+                                statement.bindString(15, jObject.getString("failedId"));
+                                statement.bindString(16, jObject.getString("failedStatusMsg"));
+                                statement.executeInsert();
+                                database.close();
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
                         }
                     }
                     if(Select_device.equals("2")){
@@ -375,7 +356,7 @@ RadioButton home_pgrd,home_pmrd;
 
                         show_PmData();
                     }
-                   }catch(Exception e){
+                }catch(Exception e){
                     e.printStackTrace();
                 }
             }
@@ -383,7 +364,6 @@ RadioButton home_pgrd,home_pmrd;
             e.printStackTrace();
         }
     }
-
     private void PG_DeleteDataBase() {
         try {
             helper = new DBHelper(getApplicationContext());

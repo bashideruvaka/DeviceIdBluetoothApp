@@ -1,5 +1,6 @@
 package androidRecyclerView;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
@@ -23,9 +24,9 @@ public class DevicesIDAdapter extends RecyclerView.Adapter<DevicesIDAdapter.View
     private List<DeviceIds> hexidList;
     public static final int SENDER = 0;
     public static final int RECIPIENT = 1;
-    public Context context1;
+    public Activity context1;
 
-    public DevicesIDAdapter(Context context, List<DeviceIds> hexids) {
+    public DevicesIDAdapter(Activity context, List<DeviceIds> hexids) {
         hexidList = hexids;
         context1=context;
 
@@ -80,7 +81,6 @@ public class DevicesIDAdapter extends RecyclerView.Adapter<DevicesIDAdapter.View
                 context1.startActivity(i);*/
                Intent intent = new Intent(context1, BluetoothChat.class);// New activity
                 intent.putExtra("hex_id",hexidList.get(position).gethex_id());
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context1.startActivity(intent);
 
             }
